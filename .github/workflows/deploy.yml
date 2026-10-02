@@ -1,0 +1,43 @@
+name: Deploy to time.paulfleury.com
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Inspect the FTP directory or deploy the tested site
+        type: choice
+        required: true
+        default: inspect
+        options: [inspect, deploy]
+permissions:
+  contents: read
+concurrency:
+  group: time-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Encrypted FTP operation
+        env:
+          FTP_HOST: ${{ vars.FTP_HOST }}
+          FTP_TLS_SERVER_NAME: ${{ vars.FTP_TLS_SERVER_NAME }}
+          FTP_DIRECTORY: ${{ vars.FTP_DIRECTORY }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          MODE: ${{ inputs.mode }}
+        run: python tools/deploy_ftp.py --mode "$MODE"
+      - name: Verify public release
+        if: inputs.mode == 'deploy'
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: node tools/verify-live.mjs

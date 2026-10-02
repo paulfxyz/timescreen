@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080d13">
+  <meta name="description" content="A quiet moment on Earth. A fullscreen world clock with live sunlight, 60 light and dark themes, and TV-style picture controls.">
+  <meta property="og:title" content="Time · Earth, in real time">
+  <meta property="og:description" content="Your time. Our planet. 60 paired themes, live sunlight, and a screen that feels like yours.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Time">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Time · Earth, in real time</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./assets/app-icon-192.png">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="./assets/satoshi-light.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to clock</a>
+  <header class="topbar chrome">
+      <nav class="toolbar" aria-label="Light and appearance">
+        <button id="light-button" class="appearance-button" title="Light and picture controls (B)" aria-haspopup="dialog" data-testid="button-light"><span data-icon="sun"></span><span>Light</span></button>
+        <button id="appearance-button" class="appearance-button" title="Customize appearance (T)" aria-haspopup="dialog" data-testid="button-appearance"><span data-icon="sliders-horizontal"></span><span>Appearance</span></button>
+      </nav>
+      <button id="fullscreen-button" class="appearance-button fullscreen-button" title="Enter full screen (F)" aria-label="Enter full screen" data-testid="button-fullscreen"><span data-icon="maximize"></span><span id="fullscreen-label">Enter full screen</span></button>
+  </header>
+  <div id="screen" class="display-scene">
+    <canvas id="background-canvas" aria-hidden="true"></canvas>
+    <div class="temperature-overlay" aria-hidden="true"></div>
+    <div id="app" class="app-shell">
+    <div class="header-space" aria-hidden="true"></div>
+
+    <main id="main" class="stage" tabindex="-1">
+      <section class="clock-panel" aria-label="Local time and sunlight">
+        <div class="clock-eyebrow"><span class="live-dot"></span><span id="clock-eyebrow">YOUR LOCAL TIME</span></div>
+        <button id="city-button" class="city-button" aria-haspopup="dialog" data-testid="button-city">
+          <h1 id="city-name">Local time</h1><span data-icon="chevron-down"></span>
+        </button>
+        <div class="clock" role="timer" aria-live="off" data-testid="text-clock">
+          <span id="clock-hours">00</span><span class="clock-colon">:</span><span id="clock-minutes">00</span>
+          <span class="clock-tail"><span id="clock-period"></span><span id="clock-seconds">00</span></span>
+        </div>
+        <div class="date-line"><p id="clock-date" data-testid="text-date">A new moment.</p><span class="date-divider"></span><span id="utc-offset" data-testid="text-offset">UTC</span></div>
+        <div class="sunlight-panel" id="sunlight-panel">
+          <div class="sunlight-heading"><span id="solar-icon" data-icon="sun"></span><span id="solar-phase">Finding the sun</span><span id="daylight-duration"></span></div>
+          <div class="day-track" id="day-track" aria-label="Daylight along the local 24-hour day"><span id="daylight-window"></span><span id="day-track-now"></span></div>
+          <div class="sunlight-times"><span><span data-icon="sunrise"></span>Sunrise <strong id="sunrise-time">··:··</strong></span><span><span data-icon="sunset"></span>Sunset <strong id="sunset-time">··:··</strong></span></div>
+        </div>
+      </section>
+
+      <section class="earth-panel" aria-label="Rotating Earth with current day and night">
+        <div class="earth-heading"><span class="earth-heading-line"></span><span>THE WORLD RIGHT NOW</span><span class="earth-heading-line"></span></div>
+        <div class="earth-viewport" id="earth-viewport">
+          <div class="earth-orbit" aria-hidden="true"><span class="north-label">N</span><span class="south-label">S</span><span class="west-tick"></span><span class="east-tick"></span></div>
+          <canvas id="earth-canvas" tabindex="0" role="img" aria-label="Interactive Earth. Drag to rotate, use arrow keys to explore, or plus and minus to zoom." data-testid="canvas-earth"></canvas>
+          <div id="globe-labels" class="globe-labels"></div>
+          <div id="earth-loading" class="earth-loading"><span></span><p>Bringing Earth into view</p></div>
+          <div id="globe-tooltip" class="globe-tooltip" hidden></div>
+        </div>
+        <div class="earth-controls chrome">
+          <button class="quiet-button" id="rotation-button" title="Pause rotation (Space)" aria-label="Pause rotation" data-testid="button-rotation"><span data-icon="pause"></span><span id="rotation-label">Slow orbit</span></button>
+          <span class="tiny-divider"></span>
+          <button class="quiet-button" id="recenter-button" title="Return to the sunlit view" data-testid="button-recenter"><span data-icon="locate-fixed"></span><span>Recenter</span></button>
+          <span class="earth-interaction-hint">Drag to explore</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottom-area">
+      <div class="world-strip" id="world-strip" aria-label="Around the world"></div>
+      <div class="statusbar chrome">
+        <div class="status-left"><span class="live-dot"></span><span>LIVE SUNLIGHT</span><span class="status-dot">·</span><span id="solar-coordinates" title="The point on Earth directly beneath the Sun" data-testid="text-subsolar"></span></div>
+        <p class="status-poetry">Same planet. Different moments.</p>
+        <button id="focus-button" class="quiet-button" title="Hide interface (H)" data-testid="button-focus"><span data-icon="scan"></span><span>Quiet mode</span><kbd>H</kbd></button>
+      </div>
+    </footer>
+    </div>
+  </div>
+
+  <button id="restore-button" class="restore-button" aria-label="Show controls" title="Show controls (H or Escape)" data-testid="button-restore"><span data-icon="sliders-horizontal"></span></button>
+  <p id="notice" class="notice" role="status" aria-live="polite"></p>
+
+  <dialog id="light-dialog" class="light-dialog" aria-labelledby="light-title" data-testid="dialog-light">
+    <div class="dialog-heading"><div><span class="eyebrow">SET THE LIGHT</span><h2 id="light-title">Your screen, your way.</h2></div><button class="icon-button close-dialog" aria-label="Close light controls" title="Close light controls" data-testid="button-close-light"><span data-icon="x"></span></button></div>
+    <div class="light-body">
+      <div class="setting-row mode-row"><span>Light & dark</span><div class="segmented"><button data-mode="light" data-testid="light-mode-light"><span data-icon="sun"></span>Light</button><button data-mode="dark" data-testid="light-mode-dark"><span data-icon="moon"></span>Dark</button></div></div>
+      <div class="section-label"><h3>Picture mode</h3><span id="picture-mode-name">Standard</span></div>
+      <div id="picture-presets" class="picture-presets" aria-label="Picture presets">
+        <button data-picture="standard" data-testid="picture-standard">Standard</button><button data-picture="cinema" data-testid="picture-cinema">Cinema</button><button data-picture="vivid" data-testid="picture-vivid">Vivid</button><button data-picture="night" data-testid="picture-night">Night</button>
+      </div>
+      <div class="picture-setting"><div><label for="picture-brightness">Brightness</label><output for="picture-brightness" id="value-brightness">100%</output></div><input id="picture-brightness" type="range" min="15" max="150" value="100" data-picture-setting="brightness" data-testid="range-brightness"><div class="range-caption"><span>Dim</span><span>Bright</span></div></div>
+      <div class="picture-setting"><div><label for="picture-contrast">Contrast</label><output for="picture-contrast" id="value-contrast">100%</output></div><input id="picture-contrast" type="range" min="70" max="140" value="100" data-picture-setting="contrast" data-testid="range-contrast"><div class="range-caption"><span>Soft</span><span>Deep</span></div></div>
+      <div class="picture-setting"><div><label for="picture-saturation">Colour</label><output for="picture-saturation" id="value-saturation">100%</output></div><input id="picture-saturation" type="range" min="0" max="160" value="100" data-picture-setting="saturation" data-testid="range-saturation"><div class="range-caption"><span>Monochrome</span><span>Rich</span></div></div>
+      <div class="picture-setting"><div><label for="picture-temperature">Temperature</label><output for="picture-temperature" id="value-temperature">Neutral</output></div><input id="picture-temperature" type="range" min="-50" max="50" value="0" data-picture-setting="temperature" data-testid="range-temperature"><div class="range-caption"><span>Cool</span><span>Warm</span></div></div>
+      <p class="setting-note">These controls adjust the page, not your device’s physical backlight. Menus stay readable even when the screen is dimmed.</p>
+    </div>
+    <div class="settings-bottom"><button id="reset-picture" class="quiet-button" data-testid="button-reset-picture"><span data-icon="rotate-ccw"></span>Reset picture</button><button class="solid-button close-dialog" data-testid="button-light-done">Done</button></div>
+  </dialog>
+
+  <dialog id="appearance-dialog" class="settings-dialog" aria-labelledby="appearance-title" data-testid="dialog-appearance">
+    <div class="dialog-heading"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="appearance-title">A different atmosphere.</h2></div><button class="icon-button close-dialog" title="Close appearance" aria-label="Close appearance" data-testid="button-close-appearance"><span data-icon="x"></span></button></div>
+    <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+      <button id="tab-themes" role="tab" aria-selected="true" aria-controls="themes-panel" data-testid="tab-themes">Themes <span id="theme-count">60</span></button>
+      <button id="tab-display" role="tab" aria-selected="false" aria-controls="display-panel" tabindex="-1" data-testid="tab-display">Display</button>
+    </div>
+    <div class="settings-scroll">
+      <div id="themes-panel" role="tabpanel" aria-labelledby="tab-themes">
+        <div class="setting-row mode-row"><span>Light & dark</span><div class="segmented"><button data-mode="light" data-testid="mode-light"><span data-icon="sun"></span>Light</button><button data-mode="dark" data-testid="mode-dark"><span data-icon="moon"></span>Dark</button></div></div>
+        <div class="section-label"><h3>Choose a mood</h3><span id="active-theme-name">Observatory</span></div>
+        <label class="theme-search"><span data-icon="search"></span><input type="search" id="theme-search" placeholder="Find a theme" aria-label="Search themes" data-testid="input-theme-search"><span id="theme-match-count">60</span></label>
+        <div id="theme-grid" class="theme-grid"></div>
+        <p id="theme-empty" class="setting-note" hidden>No matching theme. Try a colour, like blue or olive.</p>
+        <div class="section-label"><h3>Background texture</h3><span>Mix it up</span></div>
+        <div id="pattern-grid" class="pattern-grid"></div>
+        <div class="setting-row"><label for="accent-color">Your own accent</label><div class="color-input-wrap"><span id="accent-value">#dda876</span><input type="color" id="accent-color" value="#dda876" data-testid="input-accent" aria-label="Custom accent color"></div></div>
+      </div>
+      <div id="display-panel" role="tabpanel" aria-labelledby="tab-display" hidden>
+        <div class="section-label"><h3>The planet</h3></div>
+        <label class="select-setting" for="globe-finish"><span>Earth finish</span><select id="globe-finish" data-testid="select-finish"></select></label>
+        <label class="select-setting" for="rotation-speed"><span>Viewing rotation</span><select id="rotation-speed" data-testid="select-speed"><option value="0">Still</option><option value="600">Glacial · 10 min / turn</option><option value="240">Slow · 4 min / turn</option><option value="120">Drift · 2 min / turn</option><option value="60">Explore · 1 min / turn</option></select></label>
+        <p class="setting-note">Only your view rotates. Sunlight and clocks always follow the real time.</p>
+        <label class="toggle-setting"><span>City labels<span>Local times on the globe</span></span><input type="checkbox" id="show-labels" checked data-testid="toggle-labels"><span class="switch" aria-hidden="true"></span></label>
+        <label class="toggle-setting"><span>Night lights<span>City lights after sunset</span></span><input type="checkbox" id="show-lights" checked data-testid="toggle-lights"><span class="switch" aria-hidden="true"></span></label>
+        <label class="toggle-setting"><span>Meridians<span>A subtle latitude / longitude grid</span></span><input type="checkbox" id="show-grid" data-testid="toggle-grid"><span class="switch" aria-hidden="true"></span></label>
+        <div class="section-label"><h3>The clock</h3></div>
+        <label class="select-setting" for="clock-format"><span>Time format</span><select id="clock-format" data-testid="select-format"><option value="24">24-hour</option><option value="12">12-hour</option></select></label>
+        <label class="toggle-setting"><span>Seconds<span>Make every moment count</span></span><input type="checkbox" id="show-seconds" checked data-testid="toggle-seconds"><span class="switch" aria-hidden="true"></span></label>
+        <label class="toggle-setting"><span>World clocks<span>Four corners of the world</span></span><input type="checkbox" id="show-world" checked data-testid="toggle-world"><span class="switch" aria-hidden="true"></span></label>
+        <label class="select-setting" for="layout-select"><span>Layout</span><select id="layout-select" data-testid="select-layout"><option value="auto">Automatic · fits your screen</option><option value="wide">Panoramic · 10:3</option><option value="vertical">Vertical · stacked</option></select></label>
+        <div class="select-setting"><span>Full screen & install</span><button class="quiet-button" id="fullscreen-help-button" data-testid="button-fullscreen-help">Set up this device <span data-icon="maximize"></span></button></div>
+        <label class="toggle-setting"><span>Keep screen awake<span>While visible, if your browser allows</span></span><input type="checkbox" id="keep-awake" data-testid="toggle-awake"><span class="switch" aria-hidden="true"></span></label>
+        <p class="setting-note" id="awake-status" role="status"></p>
+        <div class="section-label"><h3>Keys to a quieter screen</h3></div>
+        <div class="keyboard-grid"><span><kbd>F</kbd> Full screen</span><span><kbd>H</kbd> Quiet mode</span><span><kbd>T</kbd> Themes</span><span><kbd>B</kbd> Picture controls</span><span><kbd>L</kbd> Light / dark</span><span><kbd>Space</kbd> Pause orbit</span><span><kbd>Esc</kbd> Back to controls</span></div>
+        <div class="about-note"><p>Clocks use your device time and IANA time zones. Sunlight and sunrise / sunset are calculated estimates, not a weather forecast. Earth imagery is a static composite, not live satellite photography.</p><p><a href="https://www.gml.noaa.gov/grad/solcalc/solareqns.PDF" target="_blank" rel="noopener noreferrer" data-testid="link-noaa">Solar equations: NOAA</a><span> · </span><a href="https://cs.wellesley.edu/~cs307/threejs/r124/three.js-master/examples/textures/planets/" target="_blank" rel="noopener noreferrer" data-testid="link-imagery">Earth textures: Three.js collection</a></p></div>
+      </div>
+    </div>
+    <div class="settings-bottom"><button id="reset-button" class="quiet-button" data-testid="button-reset"><span data-icon="rotate-ccw"></span>Reset</button><button id="restore-setup-button" class="quiet-button" data-testid="button-restore-setup">Restore setup</button><button id="copy-button" class="solid-button" data-testid="button-copy"><span data-icon="copy"></span>Copy setup</button></div>
+    <div id="copy-fallback" class="copy-fallback" hidden><label for="setup-url">Select and copy your portable setup code</label><input id="setup-url" readonly data-testid="input-setup-url"></div>
+    <form id="restore-form" class="copy-fallback restore-form" hidden>
+      <label for="setup-code">Paste a saved setup code</label>
+      <div class="restore-input-row"><input id="setup-code" placeholder="time:v2:…" maxlength="4096" required data-testid="input-setup-code"><button class="solid-button" type="submit" data-testid="button-apply-setup">Apply</button></div>
+      <p id="restore-status" class="setting-note" role="status"></p>
+    </form>
+  </dialog>
+
+  <dialog id="city-dialog" class="city-dialog" aria-labelledby="city-title" data-testid="dialog-city">
+    <div class="dialog-heading"><div><span class="eyebrow">CHANGE YOUR PERSPECTIVE</span><h2 id="city-title">Where in the world?</h2></div><button class="icon-button close-dialog" title="Close cities" aria-label="Close cities" data-testid="button-close-city"><span data-icon="x"></span></button></div>
+    <label class="city-search"><span data-icon="search"></span><input type="search" id="city-search" placeholder="Find a city or time zone" autocomplete="off" aria-label="Search cities" data-testid="input-city-search"></label>
+    <button id="device-time-button" class="device-time-button" data-testid="button-device-time"><span data-icon="locate-fixed"></span><span>Use device time zone</span><span id="device-zone-label"></span></button>
+    <div id="city-list" class="city-list"></div>
+    <p id="city-empty" class="city-empty" hidden>No matching city. Try a country or time zone.</p>
+  </dialog>
+  <dialog id="fullscreen-dialog" class="fullscreen-dialog" aria-labelledby="fullscreen-title" data-testid="dialog-fullscreen">
+    <div class="dialog-heading"><div><span class="eyebrow">THE WHOLE SCREEN</span><h2 id="fullscreen-title">A little more room.</h2></div><button class="icon-button close-dialog" aria-label="Close fullscreen help" title="Close fullscreen help" data-testid="button-close-fullscreen"><span data-icon="x"></span></button></div>
+    <div class="fullscreen-body">
+      <p id="fullscreen-status" class="fullscreen-status">Use native fullscreen, or install this page as a home-screen app.</p>
+      <section class="device-guide" id="guide-apple"><h3>iPhone & iPad</h3><p>In Safari, open Share, choose Add to Home Screen, and enable Open as Web App if shown. Launch the new Time icon to remove browser controls.</p><a href="https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/ios" target="_blank" rel="noopener noreferrer" data-testid="link-apple-install">Apple’s step-by-step guide</a></section>
+      <section class="device-guide" id="guide-android"><h3>Android</h3><p>Use Enter full screen, or choose Install app / Add to Home screen in your browser menu. Open the installed Time icon for a dedicated display.</p></section>
+      <section class="device-guide" id="guide-desktop"><h3>Desktop & TV browsers</h3><p>Use Enter full screen or press F. If your browser restricts it, use its own fullscreen command, usually F11 on Windows/Linux or Control + Command + F on a Mac. TV browsers may use their own display menu.</p></section>
+      <p class="setting-note">Websites cannot override browser or operating-system restrictions. In display mode, the page fills the available viewport; only native fullscreen or a home-screen app can remove browser controls.</p>
+      <p id="install-status" class="setting-note" role="status"></p>
+    </div>
+    <div class="settings-bottom"><button id="install-button" class="quiet-button" hidden data-testid="button-install"><span data-icon="download"></span>Install app</button><button class="solid-button close-dialog" data-testid="button-continue-display">Continue</button></div>
+  </dialog>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
