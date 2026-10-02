@@ -21,6 +21,6 @@ let commit = 'source-archive';
 try { commit = execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding:'utf8', stdio:['ignore','pipe','ignore'] }).trim(); } catch {}
 await writeFile(path.join(root, 'public/release.json'), JSON.stringify({
   name:'Time', version:packageJson.version, commit, builtAt:new Date().toISOString(),
-  repository:'https://github.com/paulfxyz/time',
+  repository:'https://github.com/paulfxyz/timescreen',
 }, null, 2) + '\n');
-console.log(`Time ${packageJson.version}: static site ready in public/`);
+console.log(`Timescreen ${packageJson.version}: static site ready in public/`);

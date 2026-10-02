@@ -1,6 +1,6 @@
 # Security
 
-Time is a static, client-side application. It does not need a user account, location permission, an API key, or access to personal files.
+Timescreen is a static, client-side application. It does not need a user account, location permission, an API key, or access to personal files.
 
 Do not include passwords, tokens, or private server information in public issues. Use GitHub's private vulnerability reporting when available; otherwise open a minimal issue requesting a private contact without disclosing sensitive details.
 

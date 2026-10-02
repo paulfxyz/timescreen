@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1 · 2026-10-02
+
+- Published the project under its canonical repository name, **Timescreen**, preserving the existing history and release.
+- Added the original motivation: an elegant fullscreen HTML5 clock for an otherwise-unused vertical monitor in a three-screen setup.
+- Added portrait-monitor screenshots, refreshed badges and repository metadata, and expanded installation and contributor documentation.
+- Preserved the existing clock interface, setup-code compatibility, features, and MIT license.
+
 ## 1.1.0 · 2026-10-02
 
 - Expanded from 28 to 60 themes, each in light and dark mode, with theme search.

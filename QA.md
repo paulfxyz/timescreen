@@ -1,11 +1,11 @@
-# Time QA inventory
+# Timescreen QA inventory
 
 ## Required experience
 
 - Real local time advances, uses the device clock, supports city selection and DST-aware IANA zones.
 - Animated Earth is recognizably geographic, rotates smoothly, and shows clock-driven sunlight rather than an artificial accelerated solar cycle.
 - Layout fits 10:3 ultrawide, ordinary desktop, mobile, and vertical displays without clipping essential regions.
-- Light and dark modes, 28 working theme presets, eight background patterns, and six Earth finishes.
+- Light and dark modes, 60 working theme presets, eight background patterns, and six Earth finishes.
 - Fullscreen control uses native fullscreen when permitted, with quiet-mode fallback when embedded.
 
 ## Controls and states
@@ -42,7 +42,7 @@
 - Wake lock, fullscreen or clipboard denied: inline recovery without crashing.
 - Reduced motion starts with orbit paused.
 
-## Verification outcome
+## Initial MVP verification
 
 Completed on 2 October 2026 in Chromium.
 
@@ -79,3 +79,11 @@ Publication preparation: the external Fontshare stylesheet was replaced with unm
 - Desktop dark/light, theme drawer, picture panel, mobile main view, and mobile picture controls were inspected and captured.
 - Browser automation used Chromium, including responsive layouts and permission-denial simulations. These are not claims of hands-on tests on physical iPhones, Android phones, or TV hardware.
 - The repository excludes separately licensed font/texture binaries and original source assets. The bootstrap verifies pinned upstream hashes instead.
+
+## Version 1.1.1
+
+- The public repository is now named Timescreen; the application interface and existing setup codes are unchanged.
+- All 16 model/configuration tests pass. The static build completes and the dependency audit reports no known vulnerabilities.
+- New 1080×1920 portrait screenshots were captured and visually inspected in light and dark modes, using Chromium with the Europe/Lisbon time zone.
+- The portrait page loaded the textured globe without uncaught browser errors or document overflow.
+- Installation instructions, screenshot paths, repository links, and release metadata were checked for the Timescreen name.

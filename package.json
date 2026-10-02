@@ -1,13 +1,13 @@
 {
-  "name": "time-earth-clock",
-  "version": "1.1.0",
+  "name": "timescreen",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
-  "description": "A fullscreen Earth clock with 60 paired themes and TV-style picture controls.",
+  "description": "An elegant fullscreen HTML5 clock for a spare vertical monitor, with 60 paired themes and live Earth illumination.",
   "license": "MIT",
   "author": "Paul Fleury",
   "homepage": "https://time.paulfleury.com",
-  "repository": { "type": "git", "url": "https://github.com/paulfxyz/time.git" },
+  "repository": { "type": "git", "url": "https://github.com/paulfxyz/timescreen.git" },
   "scripts": {
     "start": "serve public -l 3000 --no-clipboard",
     "test": "node --test tests/*.test.mjs",
