@@ -210,8 +210,8 @@ Picture/theme preferences stay in memory, a bookmarkable URL fragment, or a copi
 
 ## Made with
 
-Directed by Paul Fleury and built with Perplexity Computer. It started with a spare vertical screen in a three-monitor setup, and became a small, inspectable open-source project.
+Directed by Paul Fleury and built with AI. It started with a spare vertical screen in a three-monitor setup, and became a small, inspectable open-source project.
 
 ## License
 
-Original code, interface, and tooling: **MIT**, copyright © 2026 Paul Fleury. Third-party fonts, imagery, and Lucide icons retain their own terms; see [LICENSE](LICENSE) and [asset notices](docs/ASSETS.md).
+Original code, interface, and tooling: **MIT** — Third-party fonts, imagery, and Lucide icons retain their own terms; see [LICENSE](LICENSE) and [asset notices](docs/ASSETS.md).
