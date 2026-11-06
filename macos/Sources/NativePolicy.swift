@@ -1,7 +1,7 @@
 import Foundation
 
 enum NativePolicy {
-    static let version = "2.2.0"
+    static let version = "2.3.0"
     static let minimumWebVersion = "2.0.0"
     static let liveURL = URL(string: "https://time.paulfleury.com/?app=\(version)")!
     static let bundleURL = URL(string: "timescreen://app/index.html")!
@@ -25,7 +25,7 @@ enum NativePolicy {
         let allowed: Set<String> = [
             "scene", "theme", "mode", "pattern", "finish", "rotation", "format",
             "layout", "city", "zone", "seconds", "labels", "lights", "grid",
-            "world", "effects", "pname", "pcountry", "plat", "plon", "atmosphere", "atmosphereOpacity", "accent", "brightness", "contrast", "saturation", "temperature"
+            "world", "effects", "pname", "pcountry", "plat", "plon", "w1", "w2", "w3", "w4", "atmosphere", "atmosphereOpacity", "accent", "brightness", "contrast", "saturation", "temperature"
         ]
         guard value.removingPercentEncoding != nil else { return false }
         let keys = value.split(separator: "&").map { String($0.split(separator: "=", maxSplits: 1).first ?? "") }

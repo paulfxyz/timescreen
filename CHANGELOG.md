@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.0 · 2026-11-06
+
+- Added customizable world clocks: choose any of the four bottom cities from the built-in list or by worldwide search; saved in setups and links, with reset.
+- Reworked atmosphere opacity to 0-200% on a gentle curve, with a soft haze layer so low values read as a thin gas envelope and 0% is fully clear.
+- Native setup validation accepts the new world-clock keys; older apps are handed a compatible setup.
+
 ## 2.2.0 · 2026-11-06
 
 - Added an Atmosphere switch and 10-200% opacity slider (Appearance → Display); saved in setups, links and Copy setup.

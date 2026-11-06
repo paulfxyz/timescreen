@@ -1,4 +1,4 @@
-import { clamp, geoVector, sunPosition } from './solar.js?v=2.2.0';
+import { clamp, geoVector, sunPosition } from './solar.js?v=2.3.0';
 
 const RAD = Math.PI / 180;
 const TAU = Math.PI * 2;
@@ -37,12 +37,14 @@ float gridLine(float value, float stepSize, float thickness) {
 void main() {
   vec2 p = (gl_FragCoord.xy - uResolution * 0.5) / uRadius;
   float r2 = dot(p,p);
-  if(r2 > 1.12) { gl_FragColor = vec4(0.0); return; }
+  if(r2 > 1.5) { gl_FragColor = vec4(0.0); return; }
   if(r2 > 1.0) {
     float r = sqrt(r2);
     vec3 rimNormal = toWorld(vec3(normalize(p), 0.0));
     float daylight = smoothstep(-0.15, 0.45, dot(rimNormal,uSun));
-    float glow = exp(-(r-1.0)*75.0) * (0.045 + 0.28*daylight);
+    float edge = exp(-(r-1.0)*75.0) * (0.045 + 0.28*daylight);
+    float haze = exp(-(r-1.0)*20.0) * (0.012 + 0.075*daylight);
+    float glow = edge + haze;
     vec3 atmosphere = mix(vec3(0.25,0.49,0.76), uAccent, step(0.5,uStyle)*0.7);
     gl_FragColor = vec4(atmosphere, clamp(glow * uAtmosphere, 0.0, 1.0) * (1.0-uLightMode*0.45));
     return;

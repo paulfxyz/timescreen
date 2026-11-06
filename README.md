@@ -62,7 +62,8 @@ These are compositions, not just recolours. Clock faces, layout, Earth treatment
 
 ### Atmosphere and places
 
-- **Atmosphere:** Appearance → Display → Atmosphere switches the glow around the planet on or off; the slider tunes it from 10% to 200%.
+- **Atmosphere:** Appearance → Display → Atmosphere switches the glow around the planet on or off; the slider fades it from fully clear (0%) through a thin veil to a dense 200%.
+- **World clocks:** choose the four cities along the bottom, from the built-in list or any searched place.
 - **Any place:** the city picker searches 150+ built-in cities offline and, when you type, any town or region worldwide through [Open-Meteo geocoding](https://open-meteo.com/en/docs/geocoding-api) (GeoNames, CC BY 4.0). No account, and only your typed query is sent. See [SECURITY.md](SECURITY.md).
 
 | Mood | Styles |
@@ -148,7 +149,7 @@ On a Mac, after the web build:
 npm run build:mac
 npm run build:dmg
 # build/Timescreen.app
-# build/Timescreen-2.2.0-macOS-universal.dmg
+# build/Timescreen-2.3.0-macOS-universal.dmg
 ```
 
 The build verifies pinned upstream hashes for the separately licensed Earth textures and Satoshi font. JetBrains Mono and Instrument Serif are included under the SIL Open Font License; see [asset notices](docs/ASSETS.md).

@@ -107,5 +107,5 @@ jobs:
             "dist/Timescreen-$VERSION-macOS-universal.zip" \
             dist/SHA256SUMS.txt \
             dist/appcast.xml dist/update-signature.json \
-            --title "Timescreen $VERSION · Atmosphere control" \
+            --title "Timescreen $VERSION · Your world clocks and a gentler atmosphere" \
             --notes-file RELEASE_NOTES.md --verify-tag

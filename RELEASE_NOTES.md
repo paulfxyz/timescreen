@@ -1,20 +1,15 @@
-# Timescreen 2.2.0
+# Timescreen 2.3.0
 
-Two things you asked for: control over the glow around the planet, and a way to find almost any place on Earth.
+You choose the four cities along the bottom, and the atmosphere finally behaves like a real envelope of air.
 
-## New in 2.2.0
+## New in 2.3.0
 
-- **Atmosphere control:** Appearance → Display has a new Atmosphere switch and an opacity slider from 10% to 200%. Turn the blue glow off for a crisp, airless planet, soften it, or push it for a dramatic limb. It is saved with your setup and included in Copy setup.
-- **Search any place:** the city picker now finds towns, cities and regions worldwide, not only the built-in list. Type a name, or add a region such as “Lagos, Portugal”. Picks show their local time and are remembered after a restart.
-- **150 more built-in cities,** including San Francisco, San Diego, Seattle, Miami, Washington D.C., Montreal, Bogotá, Lima, Rome, Athens, Delhi, Beijing, Osaka, Melbourne and Wellington, so common places work offline.
+- **Your own world clocks:** Appearance → Display → World clocks lets you set all four places shown beside your main clock. Pick from the built-in list or search any town in the world. Your choices are saved, included in Copy setup, and have a one-tap reset to New York, London, Tokyo and Sydney.
+- **A gentler atmosphere:** opacity now runs from 0% to 200% on a smooth curve. At 50% the glow is a thin veil, around 20% it is barely there, and 0% is completely clear. A faint soft haze around the planet makes it read as a gas envelope rather than a hard ring.
 
-## Privacy note
+## Compatibility
 
-The only new network request is the place search. When you type two or more characters in the city picker, that text is sent to [Open-Meteo's free geocoding service](https://open-meteo.com/en/docs/geocoding-api) (GeoNames data, CC BY 4.0), which needs no account or key. Nothing is sent otherwise, and the clock, sunlight and your settings stay on your device. Built-in cities work without a connection.
-
-## Upgrading
-
-Mac users already on 2.1.0 receive this through Check for Updates, or automatically if enabled in Settings. The signed update feed is unchanged. Websites need the new files uploaded; older Mac apps keep working against the new site and simply do not save the atmosphere or searched-place choices until they update.
+Mac apps on 2.2.x keep working with the new site; they simply do not save the new world-clock choices until they update. Existing setup codes still restore, and the signed update feed is unchanged.
 
 The universal app supports Apple silicon and Intel on macOS 13 or newer. Existing settings are retained, and the old window-position preference is migrated when possible.
 

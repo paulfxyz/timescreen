@@ -1,10 +1,10 @@
-import { THEMES, PATTERNS, FINISHES, CITIES } from './themes.js?v=2.2.0';
-import { sunPosition, solarElevation, solarPhase, sunTimes, zonedParts, clamp } from './solar.js?v=2.2.0';
-import { Earth } from './earth.js?v=2.2.0';
-import { renderIcons, setIcon } from './icons.js?v=2.2.0';
-import { PICTURE_DEFAULTS, PICTURE_LIMITS, PICTURE_PRESETS, normalizePicture, pictureFilter, matchingPicturePreset } from './picture.js?v=2.2.0';
-import { SCENES, SCENE_CATEGORIES, getScene, sceneMatches, sceneSettings } from './scenes.js?v=2.2.0';
-import { Ambient } from './ambient.js?v=2.2.0';
+import { THEMES, PATTERNS, FINISHES, CITIES } from './themes.js?v=2.3.0';
+import { sunPosition, solarElevation, solarPhase, sunTimes, zonedParts, clamp } from './solar.js?v=2.3.0';
+import { Earth } from './earth.js?v=2.3.0';
+import { renderIcons, setIcon } from './icons.js?v=2.3.0';
+import { PICTURE_DEFAULTS, PICTURE_LIMITS, PICTURE_PRESETS, normalizePicture, pictureFilter, matchingPicturePreset } from './picture.js?v=2.3.0';
+import { SCENES, SCENE_CATEGORIES, getScene, sceneMatches, sceneSettings } from './scenes.js?v=2.3.0';
+import { Ambient } from './ambient.js?v=2.3.0';
 
 const $ = selector => document.querySelector(selector);
 const root = document.documentElement;
@@ -16,11 +16,12 @@ const deviceCity = CITIES.find(c => c.zone === deviceZone && c.id !== 'utc') || 
   id: 'device', name: deviceZone === 'UTC' ? 'UTC' : deviceZone.split('/').pop().replaceAll('_', ' '),
   country: 'Device time zone', zone: deviceZone, lat: null, lon: null,
 };
+const DEFAULT_WORLD = ['new-york', 'london', 'tokyo', 'sydney'];
 const defaults = {
   theme: 'observatory', mode: systemMode.matches ? 'dark' : 'light', pattern: 'stars',
   finish: 0, city: deviceCity.id, timezone: deviceCity.zone, rotation: reducedMotion.matches ? 0 : 240,
   format: '24', seconds: true, labels: true, lights: true, grid: false, world: true,
-  atmosphere: true, atmosphereOpacity: 100, place: null, layout: 'auto', accent: null, scene: 'observatory', effects: true,
+  atmosphere: true, atmosphereOpacity: 100, place: null, worldSlots: [...DEFAULT_WORLD], layout: 'auto', accent: null, scene: 'observatory', effects: true,
   ...PICTURE_DEFAULTS,
 };
 let state = loadState();
@@ -52,6 +53,18 @@ function placeFromParams(params) {
   const name = (params.get('pname') || '').trim().slice(0, 80);
   if (!name || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180 || !validZone(params.get('zone'))) return null;
   return { name, country: (params.get('pcountry') || '').trim().slice(0, 80), zone: params.get('zone'), lat: Math.round(lat * 1e4) / 1e4, lon: Math.round(lon * 1e4) / 1e4 };
+}
+function parseWorldSlot(raw) {
+  if (!raw) return null;
+  if (CITIES.some(c => c.id === raw && c.lat !== null)) return raw;
+  if (!raw.startsWith('~')) return null;
+  const [, name, country, zone, lat, lon] = raw.split('~');
+  return placeFromParams(new URLSearchParams({ pname: name || '', pcountry: country || '', zone: zone || '', plat: lat || '', plon: lon || '' }));
+}
+function worldSlotCode(slot) {
+  if (typeof slot === 'string') return slot;
+  const clean = text => String(text).replaceAll('~', ' ');
+  return `~${clean(slot.name)}~${clean(slot.country)}~${slot.zone}~${slot.lat}~${slot.lon}`;
 }
 function placeCity(place) {
   return { id: `geo:${place.lat},${place.lon}`, name: place.name, country: place.country, zone: place.zone, lat: place.lat, lon: place.lon, place };
@@ -105,27 +118,35 @@ function loadState(query = location.hash.slice(1) || storedSetup()) {
     value.city = 'device';
     value.timezone = params.get('zone');
   }
+  value.worldSlots = DEFAULT_WORLD.map((fallback, i) => parseWorldSlot(params.get(`w${i + 1}`)) ?? fallback);
   if (/^#[0-9a-f]{6}$/i.test(params.get('accent') || '')) value.accent = params.get('accent');
   Object.assign(value, normalizePicture(Object.fromEntries(
     Object.keys(PICTURE_LIMITS).map(key => [key, params.get(key)]))));
   return value;
 }
 
+// Opacity feels natural when it falls away gently: 50% is a thin veil, 20% barely there, 0% clear.
+function atmosphereStrength(percent) {
+  const v = clampAtmosphere(percent);
+  return v <= 100 ? Math.pow(v / 100, 1.8) : 1 + (v - 100) / 100;
+}
 function clampAtmosphere(value) {
   const n = Math.round(Number(value) / 5) * 5;
-  return Number.isFinite(n) ? Math.min(200, Math.max(10, n)) : 100;
+  return Number.isFinite(n) ? Math.min(200, Math.max(0, n)) : 100;
 }
 
-// Native 2.1.x apps validate saved setups against a fixed key list. Keep the new
-// atmosphere keys out of what we hand to an older app so its persistence keeps working.
+// Native apps validate saved setups against a fixed key list. Keep keys an older app does
+// not know out of what we hand to it so its persistence keeps working.
 const nativeAppVersion = new URLSearchParams(location.search).get('app') || '';
-const nativeKnowsAtmosphere = !nativeAppVersion || nativeAppVersion.localeCompare('2.2.0', undefined, { numeric: true }) >= 0;
+const nativeAtLeast = version => !nativeAppVersion || nativeAppVersion.localeCompare(version, undefined, { numeric: true }) >= 0;
 function nativeSetup(code = serializeState()) {
-  if (nativeKnowsAtmosphere) return code;
   const p = new URLSearchParams(code);
-  p.delete('atmosphere'); p.delete('atmosphereOpacity');
-  if (p.get('city') === 'custom') { p.set('city', 'device'); }
-  for (const key of ['pname', 'pcountry', 'plat', 'plon']) p.delete(key);
+  if (!nativeAtLeast('2.3.0')) {
+    p.delete('atmosphere'); p.delete('atmosphereOpacity');
+    if (p.get('city') === 'custom') p.set('city', 'device');
+    for (const key of ['pname', 'pcountry', 'plat', 'plon']) p.delete(key);
+  }
+  if (!nativeAtLeast('2.3.0')) for (const key of ['w1', 'w2', 'w3', 'w4']) p.delete(key);
   return p.toString();
 }
 
@@ -134,6 +155,9 @@ function serializeState() {
   for (const key of ['scene','theme','mode','pattern','finish','rotation','format','layout','city']) p.set(key, String(state[key]));
   for (const key of ['seconds','labels','lights','grid','world','effects','atmosphere']) p.set(key, state[key] ? '1' : '0');
   p.set('atmosphereOpacity', String(clampAtmosphere(state.atmosphereOpacity)));
+  state.worldSlots.forEach((slot, i) => {
+    if (worldSlotCode(slot) !== DEFAULT_WORLD[i]) p.set(`w${i + 1}`, worldSlotCode(slot));
+  });
   if (state.city === 'device') p.set('zone', state.timezone);
   if (state.city === 'custom' && state.place) {
     p.set('zone', state.place.zone); p.set('pname', state.place.name); p.set('pcountry', state.place.country);
@@ -245,7 +269,7 @@ function applyAppearance() {
   earth.update({
     style: state.finish, accent, lightMode: state.mode === 'light',
     period: state.rotation, grid: state.grid, lights: state.lights,
-    atmosphere: state.atmosphere ? state.atmosphereOpacity / 100 : 0,
+    atmosphere: state.atmosphere ? atmosphereStrength(state.atmosphereOpacity) : 0,
   });
   drawBackground();
   ambient.update(scene.effect, state.effects, effectiveAccent, state.mode === 'light');
@@ -490,17 +514,62 @@ function updateSunlight(date, parts, sun) {
   $('#day-track-now').style.left = `${progress}%`;
 }
 
-const worldCities = ['new-york','london','tokyo','sydney'].map(id => CITIES.find(c => c.id === id));
-const worldItems = worldCities.map(city => {
-  const button = document.createElement('button');
-  button.className = 'world-city';
-  button.dataset.testid = `world-${city.id}`;
-  button.setAttribute('aria-label', `Show ${city.name} on the main clock`);
-  button.innerHTML = `<span class="world-name"><span data-icon="sun"></span>${city.name}</span><span class="world-time"></span><span class="world-meta"></span>`;
-  button.addEventListener('click', () => selectCity(city));
-  $('#world-strip').append(button);
-  return { city, element: button, time: button.querySelector('.world-time'), meta: button.querySelector('.world-meta'), icon: button.querySelector('[data-icon]') };
-});
+const slotCity = slot => typeof slot === 'string' ? CITIES.find(c => c.id === slot) : placeCity(slot);
+let worldItems = [];
+function renderWorldStrip() {
+  $('#world-strip').replaceChildren();
+  worldItems = state.worldSlots.map(slotCity).map(city => {
+    const button = document.createElement('button');
+    button.className = 'world-city';
+    button.dataset.testid = `world-${city.id}`;
+    button.setAttribute('aria-label', `Show ${city.name} on the main clock`);
+    const name = document.createElement('span'); name.className = 'world-name';
+    const icon = document.createElement('span'); icon.dataset.icon = 'sun';
+    name.append(icon, city.name);
+    const time = document.createElement('span'); time.className = 'world-time';
+    const meta = document.createElement('span'); meta.className = 'world-meta';
+    button.append(name, time, meta);
+    button.addEventListener('click', () => selectCity(city));
+    $('#world-strip').append(button);
+    return { city, element: button, time, meta, icon };
+  });
+  renderWorldSlotButtons();
+  renderIcons($('#world-strip'));
+  try { updateWorldClocks(new Date(), sunPosition(new Date())); } catch {}
+}
+function renderWorldSlotButtons() {
+  const box = $('#world-slots');
+  box.replaceChildren();
+  state.worldSlots.forEach((slot, i) => {
+    const city = slotCity(slot);
+    const button = document.createElement('button');
+    button.className = 'world-slot';
+    button.dataset.testid = `world-slot-${i + 1}`;
+    button.setAttribute('aria-label', `Change world clock ${i + 1}, currently ${city.name}`);
+    const label = document.createElement('small'); label.textContent = `CLOCK ${i + 1}`;
+    const nameEl = document.createElement('span'); nameEl.textContent = city.name;
+    const country = document.createElement('small'); country.textContent = city.country;
+    button.append(label, nameEl, country);
+    button.addEventListener('click', () => { citySlotTarget = i; openDialog('city-dialog'); });
+    box.append(button);
+  });
+  const reset = document.createElement('button');
+  reset.className = 'quiet-button world-slot-reset';
+  reset.dataset.testid = 'button-world-reset';
+  reset.textContent = 'Reset to New York, London, Tokyo, Sydney';
+  reset.hidden = DEFAULT_WORLD.every((id, i) => state.worldSlots[i] === id);
+  reset.addEventListener('click', () => { state.worldSlots = [...DEFAULT_WORLD]; renderWorldStrip(); saveState(); });
+  box.append(reset);
+}
+let citySlotTarget = null;
+function assignWorldSlot(city) {
+  state.worldSlots = state.worldSlots.map((slot, i) => i === citySlotTarget ? (city.place ? { ...city.place } : city.id) : slot);
+  citySlotTarget = null;
+  $('#city-dialog').close();
+  renderWorldStrip();
+  saveState();
+}
+renderWorldStrip();
 
 function updateWorldClocks(date, sun) {
   const localDate = dayKey(date, selectedCity.zone);
@@ -561,6 +630,7 @@ function updateLabels() {
 earth.onFrame = updateLabels;
 
 function selectCity(city) {
+  if (citySlotTarget !== null) { assignWorldSlot(city); return; }
   selectedCity = city;
   state.city = city.place ? 'custom' : city.id;
   state.place = city.place || null;
@@ -602,6 +672,11 @@ function openDialog(id) {
     welcomeReturnFocus = document.activeElement;
     $('#welcome-install').open = false;
     $('.welcome-body').scrollTop = 0;
+  }
+  if (id === 'city-dialog') {
+    $('#city-dialog').classList.toggle('choosing-slot', citySlotTarget !== null);
+    $('#city-eyebrow').textContent = citySlotTarget !== null ? `WORLD CLOCK ${citySlotTarget + 1}` : 'CHANGE YOUR PERSPECTIVE';
+    $('#city-title').textContent = citySlotTarget !== null ? 'Which city here?' : 'Where in the world?';
   }
   if (!dialog.open) dialog.showModal();
   if (id === 'city-dialog') {
@@ -837,8 +912,9 @@ reducedMotion.addEventListener('change', () => {
   if (reducedMotion.matches) { state.rotation = 0; earth.update({ period: 0 }); updateRotationControl(); }
 });
 $('#appearance-button').addEventListener('click', () => openDialog('appearance-dialog'));
-$('#city-button').addEventListener('click', () => openDialog('city-dialog'));
-$('#device-time-button').addEventListener('click', () => selectCity(deviceCity));
+$('#city-button').addEventListener('click', () => { citySlotTarget = null; openDialog('city-dialog'); });
+$('#city-dialog').addEventListener('close', () => { citySlotTarget = null; });
+$('#device-time-button').addEventListener('click', () => { citySlotTarget = null; selectCity(deviceCity); });
 $('#rotation-button').addEventListener('click', toggleRotation);
 $('#recenter-button').addEventListener('click', () => earth.recenter(null, reducedMotion.matches));
 $('#fullscreen-button').addEventListener('click', toggleFullscreen);
@@ -1010,6 +1086,7 @@ $('#reset-button').addEventListener('click', () => {
   manageWakeLock();
   $('#copy-fallback').hidden = true;
   $('#restore-form').hidden = true;
+  renderWorldStrip();
   applyAppearance(); saveState(); earth.recenter(null, reducedMotion.matches);
   notice('Back to the original atmosphere.');
 });
@@ -1054,6 +1131,7 @@ $('#restore-form').addEventListener('submit', event => {
   solarCache = null;
   lastModeManual = true;
   if (state.rotation) lastPeriod = state.rotation;
+  renderWorldStrip();
   applyAppearance();
   saveState();
   earth.recenter(selectedCity.lat !== null ? selectedCity : null, reducedMotion.matches);
@@ -1094,6 +1172,7 @@ window.addEventListener('hashchange', () => {
   state = loadState(location.hash.slice(1));
   selectedCity = resolveCity(state.city, state.timezone, state.place);
   solarCache = null; lastSecond = '';
+  renderWorldStrip();
   applyAppearance();
   tick();
   if (selectedCity.lat !== null) earth.recenter(selectedCity, reducedMotion.matches);
@@ -1115,7 +1194,7 @@ window.solstice = Object.freeze({
   getView: () => ({ longitude: earth.longitude, latitude: earth.latitude, zoom: earth.zoom, frames: earth.frameCount, radius: earth.radius }),
   getSun: () => ({ ...sunPosition() }),
 });
-window.timescreen = Object.freeze({ version:'2.2.0', sceneCount:SCENES.length, getState:window.solstice.getState });
+window.timescreen = Object.freeze({ version:'2.3.0', sceneCount:SCENES.length, getState:window.solstice.getState });
 window.addEventListener('timescreen:native-state', event => {
   if (!isNative) return;
   nativeFullscreen = Boolean(event.detail?.fullscreen);
@@ -1136,6 +1215,6 @@ window.addEventListener('timescreen:command', event => {
   };
   actions[event.detail]?.();
 });
-postNative('ready', { version:'2.2.0', setup:nativeSetup() });
+postNative('ready', { version:'2.3.0', setup:nativeSetup() });
 // The download introduction belongs to the website, not an unattended native clock.
 if (!isNative && !hasSeenWelcome()) openDialog('welcome-dialog');

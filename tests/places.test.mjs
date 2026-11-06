@@ -18,8 +18,15 @@ test('atmosphere and place search controls are wired', () => {
   const earth = readFileSync(new URL('../public/earth.js', import.meta.url), 'utf8');
   const swift = readFileSync(new URL('../macos/Sources/NativePolicy.swift', import.meta.url), 'utf8');
   assert.match(html, /id="show-atmosphere"/);
-  assert.match(html, /id="atmosphere-opacity"[^>]*min="10"[^>]*max="200"/);
+  assert.match(html, /id="atmosphere-opacity"[^>]*min="0"[^>]*max="200"/);
   assert.match(html, /id="place-results"/);
   assert.match(earth, /uAtmosphere/);
   for (const key of ['atmosphere', 'atmosphereOpacity', 'pname', 'plat', 'plon']) assert.ok(swift.includes(`"${key}"`), key);
+});
+
+test('world clock slots are customizable and native-compatible', () => {
+  const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+  const swift = readFileSync(new URL('../macos/Sources/NativePolicy.swift', import.meta.url), 'utf8');
+  assert.match(html, /id="world-slots"/);
+  for (const key of ['w1', 'w2', 'w3', 'w4']) assert.ok(swift.includes(`"${key}"`), key);
 });

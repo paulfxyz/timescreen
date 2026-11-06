@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#080d13">
   <meta name="description" content="Timescreen for Mac and the web. 28 expressive clock styles, 60 colour palettes, a living Earth, and a quieter spare screen.">
-  <meta name="timescreen-version" content="2.2.0">
+  <meta name="timescreen-version" content="2.3.0">
   <meta name="timescreen-web-revision" content="mobile-2">
   <meta property="og:title" content="Timescreen · Make time look different">
   <meta property="og:description" content="28 clock styles. 60 colour palettes. One planet. A native Mac app and a fullscreen web experience.">
@@ -18,8 +18,8 @@
   <link rel="apple-touch-icon" href="./assets/app-icon-192.png">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="preload" href="./assets/satoshi-light.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./style.css?v=2.2.0">
-  <link rel="stylesheet" href="./scenes.css?v=2.2.0">
+  <link rel="stylesheet" href="./style.css?v=2.3.0">
+  <link rel="stylesheet" href="./scenes.css?v=2.3.0">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to clock</a>
@@ -164,15 +164,17 @@
         <label class="select-setting" for="globe-finish"><span>Earth finish</span><select id="globe-finish" data-testid="select-finish"></select></label>
         <label class="select-setting" for="rotation-speed"><span>Viewing rotation</span><select id="rotation-speed" data-testid="select-speed"><option value="0">Still</option><option value="600">Glacial · 10 min / turn</option><option value="240">Slow · 4 min / turn</option><option value="120">Drift · 2 min / turn</option><option value="60">Explore · 1 min / turn</option></select></label>
         <p class="setting-note">Only your view rotates. Sunlight and clocks always follow the real time.</p>
-        <label class="toggle-setting"><span>Atmosphere<span>The blue glow around the planet</span></span><input type="checkbox" id="show-atmosphere" checked data-testid="toggle-atmosphere"><span class="switch" aria-hidden="true"></span></label>
-        <div class="picture-setting" id="atmosphere-opacity-row"><div><label for="atmosphere-opacity">Atmosphere opacity</label><output for="atmosphere-opacity" id="value-atmosphere">100%</output></div><input id="atmosphere-opacity" type="range" min="10" max="200" step="5" value="100" data-testid="range-atmosphere"><div class="range-caption"><span>Faint</span><span>Strong</span></div></div>
+        <label class="toggle-setting"><span>Atmosphere<span>A soft envelope of air around the planet</span></span><input type="checkbox" id="show-atmosphere" checked data-testid="toggle-atmosphere"><span class="switch" aria-hidden="true"></span></label>
+        <div class="picture-setting" id="atmosphere-opacity-row"><div><label for="atmosphere-opacity">Atmosphere opacity</label><output for="atmosphere-opacity" id="value-atmosphere">100%</output></div><input id="atmosphere-opacity" type="range" min="0" max="200" step="5" value="100" data-testid="range-atmosphere"><div class="range-caption"><span>Clear</span><span>Dense</span></div></div>
         <label class="toggle-setting"><span>City labels<span>Local times on the globe</span></span><input type="checkbox" id="show-labels" checked data-testid="toggle-labels"><span class="switch" aria-hidden="true"></span></label>
         <label class="toggle-setting"><span>Night lights<span>City lights after sunset</span></span><input type="checkbox" id="show-lights" checked data-testid="toggle-lights"><span class="switch" aria-hidden="true"></span></label>
         <label class="toggle-setting"><span>Meridians<span>A subtle latitude / longitude grid</span></span><input type="checkbox" id="show-grid" data-testid="toggle-grid"><span class="switch" aria-hidden="true"></span></label>
         <div class="section-label"><h3>The clock</h3></div>
         <label class="select-setting" for="clock-format"><span>Time format</span><select id="clock-format" data-testid="select-format"><option value="24">24-hour</option><option value="12">12-hour</option></select></label>
         <label class="toggle-setting"><span>Seconds<span>Make every moment count</span></span><input type="checkbox" id="show-seconds" checked data-testid="toggle-seconds"><span class="switch" aria-hidden="true"></span></label>
-        <label class="toggle-setting"><span>World clocks<span>Four corners of the world</span></span><input type="checkbox" id="show-world" checked data-testid="toggle-world"><span class="switch" aria-hidden="true"></span></label>
+        <label class="toggle-setting"><span>World clocks<span>Four places along the bottom</span></span><input type="checkbox" id="show-world" checked data-testid="toggle-world"><span class="switch" aria-hidden="true"></span></label>
+        <div class="world-slots" id="world-slots" role="group" aria-label="Choose the four world clocks"></div>
+        <p class="setting-note">Pick the four places shown beside your main clock. Search any town in the list.</p>
         <label class="select-setting" for="layout-select"><span>Layout</span><select id="layout-select" data-testid="select-layout"><option value="auto">Automatic · fits your screen</option><option value="wide">Panoramic · 10:3</option><option value="vertical">Vertical · stacked</option></select></label>
         <div class="select-setting"><span>Full screen & install</span><button class="quiet-button" id="fullscreen-help-button" data-testid="button-fullscreen-help">Set up this device <span data-icon="maximize"></span></button></div>
         <label class="toggle-setting"><span>Keep screen awake<span>While visible, if your browser allows</span></span><input type="checkbox" id="keep-awake" data-testid="toggle-awake"><span class="switch" aria-hidden="true"></span></label>
@@ -193,7 +195,7 @@
   </dialog>
 
   <dialog id="city-dialog" class="city-dialog" aria-labelledby="city-title" data-testid="dialog-city">
-    <div class="dialog-heading"><div><span class="eyebrow">CHANGE YOUR PERSPECTIVE</span><h2 id="city-title">Where in the world?</h2></div><button class="icon-button close-dialog" title="Close cities" aria-label="Close cities" data-testid="button-close-city"><span data-icon="x"></span></button></div>
+    <div class="dialog-heading"><div><span class="eyebrow" id="city-eyebrow">CHANGE YOUR PERSPECTIVE</span><h2 id="city-title">Where in the world?</h2></div><button class="icon-button close-dialog" title="Close cities" aria-label="Close cities" data-testid="button-close-city"><span data-icon="x"></span></button></div>
     <label class="city-search"><span data-icon="search"></span><input type="search" id="city-search" placeholder="Search any city, town or place" autocomplete="off" aria-label="Search places" data-testid="input-city-search"></label>
     <button id="device-time-button" class="device-time-button" data-testid="button-device-time"><span data-icon="locate-fixed"></span><span>Use device time zone</span><span id="device-zone-label"></span></button>
     <div id="city-list" class="city-list"><p id="place-status" class="city-empty place-status" hidden role="status" aria-live="polite"></p><div id="place-results" class="place-results"></div></div>
@@ -211,6 +213,6 @@
     </div>
     <div class="settings-bottom"><button id="install-button" class="quiet-button" hidden data-testid="button-install"><span data-icon="download"></span>Install app</button><button class="solid-button close-dialog" data-testid="button-continue-display">Continue</button></div>
   </dialog>
-  <script type="module" src="./app.js?v=2.2.0"></script>
+  <script type="module" src="./app.js?v=2.3.0"></script>
 </body>
 </html>
