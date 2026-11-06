@@ -1,10 +1,10 @@
-import { THEMES, PATTERNS, FINISHES, CITIES } from './themes.js?v=2.1.0';
-import { sunPosition, solarElevation, solarPhase, sunTimes, zonedParts, clamp } from './solar.js?v=2.1.0';
-import { Earth } from './earth.js?v=2.1.0';
-import { renderIcons, setIcon } from './icons.js?v=2.1.0';
-import { PICTURE_DEFAULTS, PICTURE_LIMITS, PICTURE_PRESETS, normalizePicture, pictureFilter, matchingPicturePreset } from './picture.js?v=2.1.0';
-import { SCENES, SCENE_CATEGORIES, getScene, sceneMatches, sceneSettings } from './scenes.js?v=2.1.0';
-import { Ambient } from './ambient.js?v=2.1.0';
+import { THEMES, PATTERNS, FINISHES, CITIES } from './themes.js?v=2.2.0';
+import { sunPosition, solarElevation, solarPhase, sunTimes, zonedParts, clamp } from './solar.js?v=2.2.0';
+import { Earth } from './earth.js?v=2.2.0';
+import { renderIcons, setIcon } from './icons.js?v=2.2.0';
+import { PICTURE_DEFAULTS, PICTURE_LIMITS, PICTURE_PRESETS, normalizePicture, pictureFilter, matchingPicturePreset } from './picture.js?v=2.2.0';
+import { SCENES, SCENE_CATEGORIES, getScene, sceneMatches, sceneSettings } from './scenes.js?v=2.2.0';
+import { Ambient } from './ambient.js?v=2.2.0';
 
 const $ = selector => document.querySelector(selector);
 const root = document.documentElement;
@@ -20,11 +20,11 @@ const defaults = {
   theme: 'observatory', mode: systemMode.matches ? 'dark' : 'light', pattern: 'stars',
   finish: 0, city: deviceCity.id, timezone: deviceCity.zone, rotation: reducedMotion.matches ? 0 : 240,
   format: '24', seconds: true, labels: true, lights: true, grid: false, world: true,
-  layout: 'auto', accent: null, scene: 'observatory', effects: true,
+  atmosphere: true, atmosphereOpacity: 100, place: null, layout: 'auto', accent: null, scene: 'observatory', effects: true,
   ...PICTURE_DEFAULTS,
 };
 let state = loadState();
-let selectedCity = resolveCity(state.city, state.timezone);
+let selectedCity = resolveCity(state.city, state.timezone, state.place);
 let lastPeriod = state.rotation || 240;
 let quiet = false;
 let fallbackFullscreen = false;
@@ -47,7 +47,18 @@ const postNative = (command, value) => {
 };
 const formatterCache = new Map();
 
-function resolveCity(id, zone) {
+function placeFromParams(params) {
+  const lat = Number(params.get('plat')), lon = Number(params.get('plon'));
+  const name = (params.get('pname') || '').trim().slice(0, 80);
+  if (!name || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180 || !validZone(params.get('zone'))) return null;
+  return { name, country: (params.get('pcountry') || '').trim().slice(0, 80), zone: params.get('zone'), lat: Math.round(lat * 1e4) / 1e4, lon: Math.round(lon * 1e4) / 1e4 };
+}
+function placeCity(place) {
+  return { id: `geo:${place.lat},${place.lon}`, name: place.name, country: place.country, zone: place.zone, lat: place.lat, lon: place.lon, place };
+}
+
+function resolveCity(id, zone, place) {
+  if (id === 'custom' && place) return placeCity(place);
   const found = CITIES.find(c => c.id === id);
   if (found) return found;
   if (id === 'device' && validZone(zone)) {
@@ -79,12 +90,17 @@ function loadState(query = location.hash.slice(1) || storedSetup()) {
   if (['0', '60', '120', '240', '600'].includes(params.get('rotation'))) value.rotation = Number(params.get('rotation'));
   if (['12', '24'].includes(params.get('format'))) value.format = params.get('format');
   if (['auto', 'wide', 'vertical'].includes(params.get('layout'))) value.layout = params.get('layout');
-  for (const key of ['seconds','labels','lights','grid','world','effects']) {
+  for (const key of ['seconds','labels','lights','grid','world','effects','atmosphere']) {
     if (params.has(key)) value[key] = params.get(key) !== '0';
   }
+  if (params.has('atmosphereOpacity')) value.atmosphereOpacity = clampAtmosphere(params.get('atmosphereOpacity'));
   if (CITIES.some(c => c.id === params.get('city'))) {
     value.city = params.get('city');
     value.timezone = CITIES.find(c => c.id === value.city).zone;
+  } else if (params.get('city') === 'custom' && placeFromParams(params)) {
+    value.place = placeFromParams(params);
+    value.city = 'custom';
+    value.timezone = value.place.zone;
   } else if (params.get('city') === 'device' && validZone(params.get('zone'))) {
     value.city = 'device';
     value.timezone = params.get('zone');
@@ -95,11 +111,34 @@ function loadState(query = location.hash.slice(1) || storedSetup()) {
   return value;
 }
 
+function clampAtmosphere(value) {
+  const n = Math.round(Number(value) / 5) * 5;
+  return Number.isFinite(n) ? Math.min(200, Math.max(10, n)) : 100;
+}
+
+// Native 2.1.x apps validate saved setups against a fixed key list. Keep the new
+// atmosphere keys out of what we hand to an older app so its persistence keeps working.
+const nativeAppVersion = new URLSearchParams(location.search).get('app') || '';
+const nativeKnowsAtmosphere = !nativeAppVersion || nativeAppVersion.localeCompare('2.2.0', undefined, { numeric: true }) >= 0;
+function nativeSetup(code = serializeState()) {
+  if (nativeKnowsAtmosphere) return code;
+  const p = new URLSearchParams(code);
+  p.delete('atmosphere'); p.delete('atmosphereOpacity');
+  if (p.get('city') === 'custom') { p.set('city', 'device'); }
+  for (const key of ['pname', 'pcountry', 'plat', 'plon']) p.delete(key);
+  return p.toString();
+}
+
 function serializeState() {
   const p = new URLSearchParams();
   for (const key of ['scene','theme','mode','pattern','finish','rotation','format','layout','city']) p.set(key, String(state[key]));
-  for (const key of ['seconds','labels','lights','grid','world','effects']) p.set(key, state[key] ? '1' : '0');
+  for (const key of ['seconds','labels','lights','grid','world','effects','atmosphere']) p.set(key, state[key] ? '1' : '0');
+  p.set('atmosphereOpacity', String(clampAtmosphere(state.atmosphereOpacity)));
   if (state.city === 'device') p.set('zone', state.timezone);
+  if (state.city === 'custom' && state.place) {
+    p.set('zone', state.place.zone); p.set('pname', state.place.name); p.set('pcountry', state.place.country);
+    p.set('plat', String(state.place.lat)); p.set('plon', String(state.place.lon));
+  }
   if (state.accent) p.set('accent', state.accent);
   for (const key of Object.keys(PICTURE_LIMITS)) p.set(key, String(state[key]));
   return p.toString();
@@ -108,7 +147,7 @@ function serializeState() {
 function saveState() {
   try { history.replaceState(null, '', `#${serializeState()}`); } catch {}
   try { localStorage.setItem('timescreen:setup:v2', serializeState()); } catch {}
-  postNative('saveSetup', serializeState());
+  postNative('saveSetup', nativeSetup());
 }
 
 function notice(message) {
@@ -192,6 +231,12 @@ function applyAppearance() {
   $('#show-seconds').checked = state.seconds;
   $('#show-world').checked = state.world;
   $('#show-effects').checked = state.effects;
+  $('#show-atmosphere').checked = state.atmosphere;
+  state.atmosphereOpacity = clampAtmosphere(state.atmosphereOpacity);
+  $('#atmosphere-opacity').value = String(state.atmosphereOpacity);
+  $('#atmosphere-opacity').disabled = !state.atmosphere;
+  $('#value-atmosphere').textContent = `${state.atmosphereOpacity}%`;
+  $('#atmosphere-opacity-row').classList.toggle('is-disabled', !state.atmosphere);
   $('#scene-caption').textContent = scene.label;
   $('#current-scene-name').textContent = scene.name;
   document.querySelectorAll('.scene-card').forEach(button =>
@@ -200,6 +245,7 @@ function applyAppearance() {
   earth.update({
     style: state.finish, accent, lightMode: state.mode === 'light',
     period: state.rotation, grid: state.grid, lights: state.lights,
+    atmosphere: state.atmosphere ? state.atmosphereOpacity / 100 : 0,
   });
   drawBackground();
   ambient.update(scene.effect, state.effects, effectiveAccent, state.mode === 'light');
@@ -516,7 +562,8 @@ earth.onFrame = updateLabels;
 
 function selectCity(city) {
   selectedCity = city;
-  state.city = city.id;
+  state.city = city.place ? 'custom' : city.id;
+  state.place = city.place || null;
   state.timezone = city.zone;
   if (city.lat !== null && !markerItems.some(item => item.city.id === city.id)) markerItems.push(createMarker(city));
   solarCache = null;
@@ -524,7 +571,7 @@ function selectCity(city) {
   tick();
   if (city.lat !== null) earth.recenter(city, reducedMotion.matches);
   $('#city-dialog').close();
-  document.querySelectorAll('.city-option').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.city === city.id)));
+  document.querySelectorAll('#city-list > .city-option[data-city]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.city === city.id)));
   saveState();
 }
 
@@ -538,16 +585,16 @@ function buildCityList() {
     button.innerHTML = `<span>${city.name}</span><small>${city.country}</small><time></time>`;
     button.setAttribute('aria-pressed', String(city.id === selectedCity.id));
     button.addEventListener('click', () => selectCity(city));
-    $('#city-list').append(button);
+    $('#city-list').insertBefore(button, $('#place-status'));
   });
   $('#device-zone-label').textContent = deviceZone.replaceAll('_', ' ');
 }
 function updateCityTimes(date) {
-  document.querySelectorAll('.city-option').forEach(button => {
+  document.querySelectorAll('#city-list > .city-option[data-city]').forEach(button => {
     if (!button.hidden) button.querySelector('time').textContent = timeString(date, CITIES.find(c => c.id === button.dataset.city).zone);
   });
 }
-function normalized(text) { return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function normalized(text) { return String(text ?? "").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 
 function openDialog(id) {
   const dialog = $(`#${id}`);
@@ -848,16 +895,74 @@ $('#about-button').addEventListener('click', () => {
   $('#appearance-dialog').close();
   openDialog('welcome-dialog');
 });
+let placeSearchTimer = 0, placeSearchSeq = 0;
 $('#city-search').addEventListener('input', () => {
-  const query = normalized($('#city-search').value.trim());
+  const raw = $('#city-search').value.trim();
+  const query = normalized(raw);
   let found = 0;
-  document.querySelectorAll('.city-option').forEach(button => {
+  document.querySelectorAll('#city-list > .city-option[data-city]').forEach(button => {
     button.hidden = !button.dataset.search.includes(query);
     if (!button.hidden) found++;
   });
-  $('#city-empty').hidden = found > 0;
+  $('#city-empty').hidden = found > 0 || raw.length >= 2;
   updateCityTimes(new Date());
+  clearTimeout(placeSearchTimer);
+  const seq = ++placeSearchSeq;
+  $('#place-results').replaceChildren();
+  $('#place-status').hidden = raw.length < 2;
+  if (raw.length < 2) return;
+  $('#place-status').textContent = 'Searching the world…';
+  placeSearchTimer = setTimeout(async () => {
+    const results = await searchPlaces(raw);
+    if (seq !== placeSearchSeq) return;
+    if (results === null) { $('#place-status').textContent = 'Place search needs an internet connection.'; return; }
+    const known = new Set(CITIES.map(c => `${normalized(c.name)}|${normalized(c.country)}`));
+    const fresh = results.filter(r => !known.has(`${normalized(r.name)}|${normalized(r.country)}`));
+    $('#place-status').textContent = fresh.length ? 'More places · search by Open-Meteo' : (found ? '' : 'No place found. Try another spelling.');
+    $('#place-status').hidden = !$('#place-status').textContent;
+    $('#city-empty').hidden = true;
+    for (const place of fresh) {
+      const city = placeCity(place);
+      const button = document.createElement('button');
+      button.className = 'city-option';
+      button.dataset.testid = `place-${place.lat}-${place.lon}`;
+      const label = document.createElement('span'); label.textContent = place.name;
+      const sub = document.createElement('small'); sub.textContent = place.country;
+      const time = document.createElement('time'); time.textContent = timeString(new Date(), place.zone);
+      button.append(label, sub, time);
+      button.addEventListener('click', () => selectCity(city));
+      $('#place-results').append(button);
+    }
+  }, 280);
 });
+async function geocode(name) {
+  const url = new URL('https://geocoding-api.open-meteo.com/v1/search');
+  url.search = new URLSearchParams({ name, count: '20', language: 'en', format: 'json' });
+  const response = await fetch(url, { cache: 'no-store', referrerPolicy: 'no-referrer' });
+  if (!response.ok) throw new Error('search failed');
+  return (await response.json()).results || [];
+}
+// "Lagos, Portugal" or "Lagos Portugal": search the place name, then rank by the extra words.
+async function searchPlaces(text) {
+  try {
+    const comma = text.split(',').map(part => part.trim()).filter(Boolean);
+    const words = text.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+    const attempts = comma.length > 1 ? [[comma[0], comma.slice(1).join(' ')]] : [];
+    for (let n = words.length; n >= 1; n--) attempts.push([words.slice(0, n).join(' '), words.slice(n).join(' ')]);
+    let rows = [], hint = '';
+    for (const [name, rest] of attempts) {
+      rows = await geocode(name);
+      if (rows.length) { hint = normalized(rest); break; }
+    }
+    const score = r => hint && normalized(`${r.admin1 || ''} ${r.country || ''} ${r.country_code || ''}`).includes(hint) ? 1 : 0;
+    rows = rows.map((r, i) => ({ r, i })).sort((x, y) => score(y.r) - score(x.r) || x.i - y.i).map(x => x.r);
+    return rows.filter(r => r.timezone && validZone(r.timezone) && Number.isFinite(r.latitude) && Number.isFinite(r.longitude)).slice(0, 12).map(r => ({
+      name: String(r.name).slice(0, 80),
+      country: [r.admin1, r.country].filter(Boolean).join(', ').slice(0, 80),
+      zone: r.timezone, lat: Math.round(r.latitude * 1e4) / 1e4, lon: Math.round(r.longitude * 1e4) / 1e4,
+    }));
+  } catch { return null; }
+}
 function activateTab(name, focus = false) {
   for (const id of ['styles','themes','display']) {
     const selected = id === name;
@@ -879,7 +984,7 @@ for (const id of ['styles','themes','display']) {
     }
   });
 }
-for (const [id, key] of [['show-labels','labels'],['show-lights','lights'],['show-grid','grid'],['show-seconds','seconds'],['show-world','world'],['show-effects','effects']]) {
+for (const [id, key] of [['show-labels','labels'],['show-lights','lights'],['show-grid','grid'],['show-seconds','seconds'],['show-world','world'],['show-effects','effects'],['show-atmosphere','atmosphere']]) {
   $(`#${id}`).addEventListener('change', event => { state[key] = event.target.checked; applyAppearance(); saveState(); });
 }
 for (const [id, key] of [['globe-finish','finish'],['rotation-speed','rotation'],['clock-format','format'],['layout-select','layout']]) {
@@ -889,6 +994,7 @@ for (const [id, key] of [['globe-finish','finish'],['rotation-speed','rotation']
     applyAppearance(); saveState();
   });
 }
+$('#atmosphere-opacity').addEventListener('input', event => { state.atmosphereOpacity = clampAtmosphere(event.target.value); applyAppearance(); saveState(); });
 $('#accent-color').addEventListener('input', event => { state.accent = event.target.value; applyAppearance(); saveState(); });
 $('#keep-awake').addEventListener('change', event => { awakeRequested = event.target.checked; manageWakeLock(); });
 document.addEventListener('visibilitychange', () => {
@@ -944,7 +1050,7 @@ $('#restore-form').addEventListener('submit', event => {
     return;
   }
   state = loadState(code.slice(prefix.length));
-  selectedCity = resolveCity(state.city, state.timezone);
+  selectedCity = resolveCity(state.city, state.timezone, state.place);
   solarCache = null;
   lastModeManual = true;
   if (state.rotation) lastPeriod = state.rotation;
@@ -986,7 +1092,7 @@ window.addEventListener('hashchange', () => {
   // Anchor navigation must never reset a saved setup.
   if (!location.hash.includes('=')) return;
   state = loadState(location.hash.slice(1));
-  selectedCity = resolveCity(state.city, state.timezone);
+  selectedCity = resolveCity(state.city, state.timezone, state.place);
   solarCache = null; lastSecond = '';
   applyAppearance();
   tick();
@@ -1009,7 +1115,7 @@ window.solstice = Object.freeze({
   getView: () => ({ longitude: earth.longitude, latitude: earth.latitude, zoom: earth.zoom, frames: earth.frameCount, radius: earth.radius }),
   getSun: () => ({ ...sunPosition() }),
 });
-window.timescreen = Object.freeze({ version:'2.1.0', sceneCount:SCENES.length, getState:window.solstice.getState });
+window.timescreen = Object.freeze({ version:'2.2.0', sceneCount:SCENES.length, getState:window.solstice.getState });
 window.addEventListener('timescreen:native-state', event => {
   if (!isNative) return;
   nativeFullscreen = Boolean(event.detail?.fullscreen);
@@ -1030,6 +1136,6 @@ window.addEventListener('timescreen:command', event => {
   };
   actions[event.detail]?.();
 });
-postNative('ready', { version:'2.1.0', setup:serializeState() });
+postNative('ready', { version:'2.2.0', setup:nativeSetup() });
 // The download introduction belongs to the website, not an unattended native clock.
 if (!isNative && !hasSeenWelcome()) openDialog('welcome-dialog');

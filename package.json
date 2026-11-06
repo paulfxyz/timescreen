@@ -1,6 +1,6 @@
 {
   "name": "timescreen",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "description": "A native macOS and web clock with 28 scene designs, 60 paired palettes, live Earth illumination, and offline support.",

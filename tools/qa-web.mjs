@@ -11,7 +11,7 @@ export async function runWebQA(page, base = 'http://127.0.0.1:3000') {
   const dialog = async tab => { await click('button-appearance'); if (tab) await click(`tab-${tab}`); };
   const close = () => click('button-close-appearance');
   await page.goto(`${base}/#scene=observatory&city=lisbon&effects=1`);
-  await page.waitForFunction(() => window.timescreen?.version === '2.1.0');
+  await page.waitForFunction(() => window.timescreen?.version === '2.2.0');
   await page.waitForFunction(() => window.timescreen.getState().ready);
   if (await page.getByTestId('dialog-welcome').isVisible()) await click('button-welcome-continue');
   check(await page.locator('.scene-card').count() === 28, '28 scene cards');
@@ -32,7 +32,7 @@ export async function runWebQA(page, base = 'http://127.0.0.1:3000') {
   check((await state()).theme === 'azure' && (await state()).scene === 'matrix', 'Scene and palette remain independent');
   await page.getByTestId('input-theme-search').fill('');
   await click('tab-display');
-  for (const [id, key] of [['effects','effects'],['labels','labels'],['lights','lights'],['grid','grid'],['seconds','seconds'],['world','world']]) {
+  for (const [id, key] of [['effects','effects'],['labels','labels'],['lights','lights'],['grid','grid'],['seconds','seconds'],['world','world'],['atmosphere','atmosphere']]) {
     const before = (await state())[key];
     await page.getByTestId(`toggle-${id}`).locator('..').click();
     check((await state())[key] === !before, `${id} toggle`);

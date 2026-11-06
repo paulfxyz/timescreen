@@ -1,21 +1,20 @@
-# Timescreen 2.1.0
+# Timescreen 2.2.0
 
-This release makes Timescreen easier to keep current and brings the clock back where you left it. The 28 styles and 60 colour palettes remain unchanged.
+Two things you asked for: control over the glow around the planet, and a way to find almost any place on Earth.
 
-## New in 2.1.0
+## New in 2.2.0
 
-- **Check for Updates:** a real native update window replaces the browser link. Find it in the Timescreen menu, menu-bar launcher or Settings.
-- **Automatic updates:** enable “Automatically download and install updates” in Settings. Sparkle downloads verified updates in the background and completes installation when the app quits, or you can choose Install and Relaunch.
-- **Signed distribution:** both the update feed and update archives are Ed25519-signed and checked against the app's pinned key. Invalid feeds are not allowed to fail open, and archives are checked before extraction.
-- **Launch at login:** the dedicated setting uses macOS Login Items and shows whether it is enabled or waiting for system approval.
-- **Remember position, size and display:** enabled by default, with explicit controls and a reset action. Moving the window, resizing it, changing monitor arrangement or disconnecting a monitor no longer leaves it inaccessible.
-- **Clearer settings:** a native, scrollable Settings window groups updates, startup and display controls and shows the installed version.
+- **Atmosphere control:** Appearance → Display has a new Atmosphere switch and an opacity slider from 10% to 200%. Turn the blue glow off for a crisp, airless planet, soften it, or push it for a dramatic limb. It is saved with your setup and included in Copy setup.
+- **Search any place:** the city picker now finds towns, cities and regions worldwide, not only the built-in list. Type a name, or add a region such as “Lagos, Portugal”. Picks show their local time and are remembered after a restart.
+- **150 more built-in cities,** including San Francisco, San Diego, Seattle, Miami, Washington D.C., Montreal, Bogotá, Lima, Rome, Athens, Delhi, Beijing, Osaka, Melbourne and Wellington, so common places work offline.
 
-Automatic checks are enabled by default, with a six-hour interval. Automatic download/install and launch at login remain opt-in; no system profile is sent.
+## Privacy note
 
-## Install once to enable future in-app updates
+The only new network request is the place search. When you type two or more characters in the city picker, that text is sent to [Open-Meteo's free geocoding service](https://open-meteo.com/en/docs/geocoding-api) (GeoNames data, CC BY 4.0), which needs no account or key. Nothing is sent otherwise, and the clock, sunlight and your settings stay on your device. Built-in cities work without a connection.
 
-Users of 2.0.0 need to download **Timescreen-2.1.0-macOS-universal.dmg**, quit the old app and replace it in Applications. Version 2.0.0 did not include an installer/updater, so it cannot install this first updater-enabled release by itself.
+## Upgrading
+
+Mac users already on 2.1.0 receive this through Check for Updates, or automatically if enabled in Settings. The signed update feed is unchanged. Websites need the new files uploaded; older Mac apps keep working against the new site and simply do not save the atmosphere or searched-place choices until they update.
 
 The universal app supports Apple silicon and Intel on macOS 13 or newer. Existing settings are retained, and the old window-position preference is migrated when possible.
 

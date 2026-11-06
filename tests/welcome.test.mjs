@@ -27,7 +27,7 @@ test('welcome is separate from clock settings, dismissible and not automatic in 
   assert.match(app, /'#welcome-dialog'\)\.addEventListener\('close'/);
   assert.match(app, /'#about-button'\)\.addEventListener\('click'/);
   assert.match(read('tools/build-preview.mjs'), /previewMemory\.get\('welcome'\)/);
-  assert.match(read('public/sw.js'), /time-2\.1\.0-mobile-2/);
+  assert.match(read('public/sw.js'), /time-2\.2\.0-mobile-2/);
 });
 
 test('mobile resources use a footer dialog trigger and progressively disclosed installation help', () => {

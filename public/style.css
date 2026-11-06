@@ -487,3 +487,5 @@ select { background: var(--color-bg); border: 1px solid var(--color-border); bor
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+.picture-setting.is-disabled { opacity: .45; }
+.place-status { padding: var(--space-4) var(--space-2) var(--space-1); font-size: var(--text-xs); letter-spacing: .04em; }

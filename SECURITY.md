@@ -32,3 +32,7 @@ The private signing seed lives only in the encrypted repository secret `SPARKLE_
 Automatic update checks are enabled by default. Automatic download/install is opt-in and managed through Sparkle's own preferences, not duplicate application defaults; installation occurs on quit or explicit install/relaunch. System-profile reporting is disabled.
 
 Update signatures are independent of Apple Developer ID signing and notarization. They authenticate update artifacts but do not eliminate Gatekeeper first-open approval or make a managed Mac accept an application against its administrator's policy.
+
+## Network use
+
+Timescreen makes one optional third-party request: city search sends the text typed in the picker (two or more characters) to `geocoding-api.open-meteo.com`, without cookies, a key or a referrer. Place results come from GeoNames under CC BY 4.0. Nothing else leaves the device, and the service worker does not cache search responses.

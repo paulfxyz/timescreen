@@ -60,6 +60,11 @@ The screenshot is from the isolated native verification run, where automatic che
 
 These are compositions, not just recolours. Clock faces, layout, Earth treatment, graphics and restrained ambient effects change together; all 60 paired colour palettes remain independently selectable.
 
+### Atmosphere and places
+
+- **Atmosphere:** Appearance → Display → Atmosphere switches the glow around the planet on or off; the slider tunes it from 10% to 200%.
+- **Any place:** the city picker searches 150+ built-in cities offline and, when you type, any town or region worldwide through [Open-Meteo geocoding](https://open-meteo.com/en/docs/geocoding-api) (GeoNames, CC BY 4.0). No account, and only your typed query is sent. See [SECURITY.md](SECURITY.md).
+
 | Mood | Styles |
 | --- | --- |
 | Minimal | Observatory, Cupertino, Swiss, Zen |
@@ -143,7 +148,7 @@ On a Mac, after the web build:
 npm run build:mac
 npm run build:dmg
 # build/Timescreen.app
-# build/Timescreen-2.1.0-macOS-universal.dmg
+# build/Timescreen-2.2.0-macOS-universal.dmg
 ```
 
 The build verifies pinned upstream hashes for the separately licensed Earth textures and Satoshi font. JetBrains Mono and Instrument Serif are included under the SIL Open Font License; see [asset notices](docs/ASSETS.md).

@@ -4,7 +4,7 @@ Timescreen is available as a native Swift macOS application and a standalone HTM
 
 ## Install the Mac app
 
-1. Download `Timescreen-2.1.0-macOS-universal.dmg` from the [official releases](https://github.com/paulfxyz/timescreen/releases/latest).
+1. Download `Timescreen-2.2.0-macOS-universal.dmg` from the [official releases](https://github.com/paulfxyz/timescreen/releases/latest).
 2. Open the DMG and drag **Timescreen** to **Applications**.
 3. Eject the installer, then open Timescreen from Applications or Spotlight.
 4. Choose a style in Appearance and use `Control` + `Command` + `F` for native fullscreen.
@@ -20,7 +20,7 @@ If you trust the official release, attempt to open it, then visit **System Setti
 `SHA256SUMS.txt` accompanies the release. To check an installer in Downloads, compare its digest with that file:
 
 ```sh
-shasum -a 256 ~/Downloads/Timescreen-2.1.0-macOS-universal.dmg
+shasum -a 256 ~/Downloads/Timescreen-2.2.0-macOS-universal.dmg
 ```
 
 ### Make it easy to open

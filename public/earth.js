@@ -1,4 +1,4 @@
-import { clamp, geoVector, sunPosition } from './solar.js?v=2.1.0';
+import { clamp, geoVector, sunPosition } from './solar.js?v=2.2.0';
 
 const RAD = Math.PI / 180;
 const TAU = Math.PI * 2;
@@ -18,6 +18,7 @@ uniform float uStyle;
 uniform float uGrid;
 uniform float uLights;
 uniform float uLightMode;
+uniform float uAtmosphere;
 uniform sampler2D uDay;
 uniform sampler2D uNight;
 uniform sampler2D uSpecular;
@@ -43,7 +44,7 @@ void main() {
     float daylight = smoothstep(-0.15, 0.45, dot(rimNormal,uSun));
     float glow = exp(-(r-1.0)*75.0) * (0.045 + 0.28*daylight);
     vec3 atmosphere = mix(vec3(0.25,0.49,0.76), uAccent, step(0.5,uStyle)*0.7);
-    gl_FragColor = vec4(atmosphere, glow * (1.0-uLightMode*0.45));
+    gl_FragColor = vec4(atmosphere, clamp(glow * uAtmosphere, 0.0, 1.0) * (1.0-uLightMode*0.45));
     return;
   }
   float z = sqrt(max(0.0,1.0-r2));
@@ -101,7 +102,7 @@ void main() {
   color += uAccent * grid * 0.17 * gridAmount * (0.4+sunlight*0.6);
   float rim = pow(1.0-z,4.0);
   vec3 airColor = mix(vec3(0.13,0.34,0.58),uAccent*0.35,step(0.5,uStyle));
-  color += airColor * rim * (0.12+sunlight*0.6);
+  color += airColor * rim * (0.12+sunlight*0.6) * uAtmosphere;
   float edgeAlpha = smoothstep(0.0,2.0/uRadius,1.0-sqrt(r2));
   gl_FragColor = vec4(clamp(color,0.0,1.0),edgeAlpha);
 }
@@ -122,6 +123,7 @@ export class Earth {
     this.accent = [0.867, 0.659, 0.463];
     this.grid = false;
     this.lights = true;
+    this.atmosphere = 1;
     this.lightMode = false;
     this.dragging = false;
     this.lastInteraction = 0;
@@ -229,7 +231,7 @@ export class Earth {
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
     this.uniforms = {};
-    ['Resolution','Radius','Yaw','Pitch','Sun','Accent','Style','Grid','Lights','LightMode'].forEach(key => {
+    ['Resolution','Radius','Yaw','Pitch','Sun','Accent','Style','Grid','Lights','LightMode','Atmosphere'].forEach(key => {
       this.uniforms[key] = gl.getUniformLocation(this.program, `u${key}`);
     });
     this.textures = {};
@@ -336,6 +338,7 @@ export class Earth {
     if (settings.accent) this.accent = hexToRGB(settings.accent);
     if (settings.grid !== undefined) this.grid = settings.grid;
     if (settings.lights !== undefined) this.lights = settings.lights;
+    if (settings.atmosphere !== undefined) this.atmosphere = Math.max(0, Number(settings.atmosphere));
     if (settings.lightMode !== undefined) this.lightMode = settings.lightMode;
   }
 
@@ -418,6 +421,7 @@ export class Earth {
     gl.uniform1f(u.Grid, this.grid ? 1 : 0);
     gl.uniform1f(u.Lights, this.lights ? 1 : 0);
     gl.uniform1f(u.LightMode, this.lightMode ? 1 : 0);
+    gl.uniform1f(u.Atmosphere, this.atmosphere);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 

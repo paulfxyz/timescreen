@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.0 · 2026-11-06
+
+- Added an Atmosphere switch and 10-200% opacity slider (Appearance → Display); saved in setups, links and Copy setup.
+- Added worldwide place search in the city picker using Open-Meteo geocoding (no key, only on typing) and persisted searched places with their time zone.
+- Added 150 built-in cities, including San Francisco, San Diego, Seattle and Miami.
+- Bundled app and setup validation accept the new keys; 2.1.x apps are handed a compatible setup.
+
 ## Mobile navigation refinement · 2026-10-29
 
 - Removed the GitHub/Mac link pill from narrow headers and restored readable Light and Appearance labels.

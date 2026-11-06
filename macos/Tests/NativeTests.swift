@@ -20,6 +20,7 @@ struct NativeTests {
         check(!NativePolicy.external(URL(string:"file:///Applications")!), "Reject external file")
         check(!NativePolicy.external(URL(string:"x-apple.systempreferences:")!), "Reject arbitrary schemes")
         check(NativePolicy.validSetup("scene=matrix&theme=terminal&accent=%2300ff00"), "Valid setup")
+        check(NativePolicy.validSetup("atmosphere=1&atmosphereOpacity=60"), "Atmosphere setup keys")
         check(!NativePolicy.validSetup("evil=value"), "Unknown setup key")
         check(!NativePolicy.validSetup("theme="+String(repeating:"x",count:5000)), "Bound setup size")
         check(!NativePolicy.validSetup("theme=abc\n"), "No control characters")
