@@ -77,9 +77,53 @@ def guard_baseline(ftp):
             raise ValueError("The Time site changed since review. No activation permitted.")
 
 
+def cleanup_misplaced(ftp, directory):
+    """Remove release files accidentally uploaded to the FTP account root.
+
+    Only files whose relative path and byte size match this build's public/ output are
+    deleted, plus the .time-backups tree this tool created. Site folders are never touched.
+    """
+    if directory != "/":
+        raise ValueError("cleanup-misplaced only runs against the FTP account root.")
+    public = Path(__file__).resolve().parents[1] / "public"
+    removed, kept = [], []
+    for file in sorted(p for p in public.rglob("*") if p.is_file()):
+        relative = file.relative_to(public).as_posix()
+        try:
+            size = ftp.size(relative)
+        except ftplib.error_perm:
+            continue
+        if size == file.stat().st_size:
+            ftp.delete(relative)
+            removed.append(relative)
+        else:
+            kept.append(relative)
+    for folder in sorted({Path(r).parent.as_posix() for r in removed if "/" in r}, reverse=True):
+        try:
+            ftp.rmd(folder)
+        except ftplib.error_perm:
+            kept.append(folder + "/")
+    def remove_tree(path):
+        for name, info in list(ftp.mlsd(path)):
+            if name in (".", ".."):
+                continue
+            child = path + "/" + name
+            if info.get("type") == "dir":
+                remove_tree(child)
+            else:
+                ftp.delete(child)
+        ftp.rmd(path)
+    try:
+        remove_tree(".time-backups")
+        removed.append(".time-backups/")
+    except ftplib.all_errors as error:
+        kept.append(".time-backups (" + str(error)[:60] + ")")
+    print(json.dumps({"status": "cleaned", "removed": removed, "kept": kept}))
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["inspect", "deploy"], default="inspect")
+    parser.add_argument("--mode", choices=["inspect", "deploy", "cleanup-misplaced"], default="inspect")
     args = parser.parse_args()
     host = os.environ.get("FTP_HOST", "")
     username = os.environ.get("FTP_USERNAME", "")
@@ -108,6 +152,10 @@ def main():
         remote = [{"name": name} for name in ftp.nlst() if name not in (".", "..")]
     print(json.dumps({"directory":ftp.pwd(), "tls_verified":True, "mode":args.mode, "existing":remote[:60]}))
     if args.mode == "inspect":
+        ftp.quit()
+        return
+    if args.mode == "cleanup-misplaced":
+        cleanup_misplaced(ftp, directory)
         ftp.quit()
         return
 

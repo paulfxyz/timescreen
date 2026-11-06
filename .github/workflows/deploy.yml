@@ -7,7 +7,7 @@ on:
         type: choice
         required: true
         default: inspect
-        options: [inspect, deploy]
+        options: [inspect, deploy, cleanup-misplaced]
 permissions:
   contents: read
 concurrency:
